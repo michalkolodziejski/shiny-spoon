@@ -1,0 +1,30 @@
+type ISSLocation @model {
+	deviceid: String!
+	time: String
+	latitude: String!
+	longitude: String!
+}
+
+type Mutation {
+    createISSLocation(
+        deviceid: String!
+        time: String
+        latitude: String!
+        longitude: String!
+    ): ISSLocation!
+}
+
+type Subscription {
+    addISSLocation: ISSLocation
+        @aws_subscribe(mutations: ["createISSLocation"])
+}
+
+schema {
+    query: Query
+    mutation: Mutation
+    subscription: Subscription
+}
+
+type Query {
+    getISSLocations(filter: String): [ISSLocation!]!
+}

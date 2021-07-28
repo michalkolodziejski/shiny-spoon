@@ -1,0 +1,10 @@
+.env/
+.*
+!.adr-dir
+!.editorconfig
+!.tool-versions
+!.gitignore
+node_modules/
+package-lock.json
+package.json
+__pycache__

@@ -1,0 +1,124 @@
+service: ISSLocationGraphQLAPI
+
+provider:
+  name: aws
+  runtime: python3.6
+  region: eu-west-1
+  memorySize: 128
+  timeout: 30
+  stage: dev
+  environment:
+    DYNAMODB_TABLE: ISSLocations-${self:provider.stage}
+  iam:
+    role:
+      statements:
+        - Effect: "Allow"
+          Action:
+            - dynamodb:DescribeTable
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+            - dynamodb:BatchWriteItem
+          Resource: 'arn:aws:dynamodb:*:*:*'
+  lambdaHashingVersion: 20201221
+
+resources:
+  Resources:
+    ### DynamoDB
+    ISSLocationsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.DYNAMODB_TABLE}
+        AttributeDefinitions:
+          - AttributeName: deviceid
+            AttributeType: S
+          - AttributeName: time
+            AttributeType: N
+        KeySchema:
+          - AttributeName: deviceid
+            KeyType: HASH
+          - AttributeName: time
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+
+custom:
+  pythonRequirements:
+    dockerizePip: true
+    zip: true
+    slim: true
+    strip: false
+  useStaticCache: true
+  useDownloadCache: true
+  cacheLocation: "./cache"
+  warmup:
+    officeHoursWarmer:
+      enabled: true
+      events:
+        - schedule: cron(0/5 8-17 ? * MON-FRI *)
+      concurrency: 10
+    outOfOfficeHoursWarmer:
+      enabled: true
+      events:
+        - schedule: cron(0/5 0-7 ? * MON-FRI *)
+        - schedule: cron(0/5 23 ? * MON-FRI *)
+        - schedule: cron(0/5 * ? * SAT-SUN *)
+      concurrency: 1
+  ### AppSync
+  appSync:
+    name: api
+    authenticationType: API_KEY # AWS_IAM AMAZON_COGNITO_USER_POOLS OPENID_CONNECT
+    schema: src/graphql/schema.graphql
+    dataSources:
+      - type: AMAZON_DYNAMODB
+        name: ISSLocations
+        description: ISS Locations Table
+        config:
+          tableName: { Ref: ISSLocationsTable }
+          iamRoleStatements:
+            - Effect: "Allow"
+              Action:
+                - "dynamodb:*"
+              Resource:
+                - "arn:aws:dynamodb:::table/${self:provider.environment.DYNAMODB_TABLE}"
+                - "arn:aws:dynamodb:::table/${self:provider.environment.DYNAMODB_TABLE}/*"
+    caching:
+      behavior: FULL_REQUEST_CACHING
+      ttl: 3600
+    ### API_KEY
+    apiKeys:
+      - name: iss-graphql-api-key-${self:provider.stage}
+        description: API KEY for GraphQL ISS API
+        expires: 1y
+  capacities:
+    - table: ${self:provider.environment.DYNAMODB_TABLE}
+      read:
+        minimum: 5
+        maximum: 100
+        usage: 0.75
+      write:
+        minimum: 25
+        maximum: 500
+        usage: 0.5
+
+functions:
+  ### Lambda
+  locationIngest:
+    handler: src/lambda/LambdaISSLocationIngest/handler.lambda_handler
+    name: ${self:service}-ingestLocation-${self:provider.stage}
+    memorySize: 128
+    timeout: 5
+    environment:
+      DYNAMODB_ISSLOCATION_TABLE: ${self:provider.environment.DYNAMODB_TABLE}
+    provisionedConcurrency: 1
+    warmup: true
+
+plugins:
+  - serverless-python-requirements
+  - serverless-plugin-warmup
+  - serverless-appsync-plugin
+  - serverless-add-api-key

@@ -9,7 +9,6 @@ install:
 	.env/bin/python -m ipykernel install --name=.env
 	npm install -g serverless
 	serverless plugin install -n serverless-python-requirements
-	# serverless plugin install -n serverless-add-api-key
 	serverless plugin install -n serverless-plugin-warmup
 	serverless plugin install -n serverless-appsync-plugin
 	serverless plugin install -n serverless-dynamodb-autoscaling

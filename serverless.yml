@@ -26,6 +26,7 @@ provider:
   lambdaHashingVersion: 20201221
 
 resources:
+  Description: Stack for ISSLocation GraphQL API
   Resources:
     ### DynamoDB
     ISSLocationsTable:
@@ -73,22 +74,23 @@ custom:
     name: api
     authenticationType: API_KEY # AWS_IAM AMAZON_COGNITO_USER_POOLS OPENID_CONNECT
     schema: src/graphql/schema.graphql
+    mappingTemplatesLocation: src/graphql/resolvers
+    mappingTemplates:
+      - field: listISSLocations
+        dataSource: ISSLocations
+        type: Query
+      - field: getISSLocation
+        dataSource: ISSLocations
+        type: Query
+      - field: createISSLocation
+        dataSource: ISSLocations
+        type: Mutation
     dataSources:
       - type: AMAZON_DYNAMODB
         name: ISSLocations
         description: ISS Locations Table
         config:
           tableName: { Ref: ISSLocationsTable }
-          iamRoleStatements:
-            - Effect: "Allow"
-              Action:
-                - "dynamodb:*"
-              Resource:
-                - "arn:aws:dynamodb:::table/${self:provider.environment.DYNAMODB_TABLE}"
-                - "arn:aws:dynamodb:::table/${self:provider.environment.DYNAMODB_TABLE}/*"
-    caching:
-      behavior: FULL_REQUEST_CACHING
-      ttl: 3600
     ### API_KEY
     apiKeys:
       - name: iss-graphql-api-key-${self:provider.stage}
@@ -121,4 +123,3 @@ plugins:
   - serverless-python-requirements
   - serverless-plugin-warmup
   - serverless-appsync-plugin
-  - serverless-add-api-key

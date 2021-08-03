@@ -1,30 +1,115 @@
-type ISSLocation @model {
-	deviceid: String!
-	time: String
-	latitude: String!
-	longitude: String!
+schema {
+  query: Query
+  mutation: Mutation
+  subscription: Subscription
+}
+
+type ISSLocation {
+  deviceid: String!
+  latitude: String!
+  longitude: String!
+  time: Int!
+}
+
+type ISSLocationConnection {
+  items: [ISSLocation]
+  nextToken: String
 }
 
 type Mutation {
-    createISSLocation(
-        deviceid: String!
-        time: String
-        latitude: String!
-        longitude: String!
-    ): ISSLocation!
-}
-
-type Subscription {
-    addISSLocation: ISSLocation
-        @aws_subscribe(mutations: ["createISSLocation"])
-}
-
-schema {
-    query: Query
-    mutation: Mutation
-    subscription: Subscription
+  createISSLocation(input: CreateISSLocationInput!): ISSLocation
+  deleteISSLocation(input: DeleteISSLocationInput!): ISSLocation
+  updateISSLocation(input: UpdateISSLocationInput!): ISSLocation
 }
 
 type Query {
-    getISSLocations(filter: String): [ISSLocation!]!
+  getISSLocation(deviceid: String!, time: Int!): ISSLocation
+  listISSLocations(filter: TableISSLocationFilterInput, limit: Int, nextToken: String): ISSLocationConnection
+}
+
+type Subscription {
+  onCreateISSLocation(deviceid: String, latitude: String, longitude: String, time: Int): ISSLocation @aws_subscribe(mutations : ["createISSLocation"])
+  onDeleteISSLocation(deviceid: String, latitude: String, longitude: String, time: Int): ISSLocation @aws_subscribe(mutations : ["deleteISSLocation"])
+  onUpdateISSLocation(deviceid: String, latitude: String, longitude: String, time: Int): ISSLocation @aws_subscribe(mutations : ["updateISSLocation"])
+}
+
+input CreateISSLocationInput {
+  deviceid: String!
+  latitude: String!
+  longitude: String!
+  time: Int!
+}
+
+input DeleteISSLocationInput {
+  deviceid: String!
+  time: Int!
+}
+
+input TableBooleanFilterInput {
+  eq: Boolean
+  ne: Boolean
+}
+
+input TableFloatFilterInput {
+  between: [Float]
+  contains: Float
+  eq: Float
+  ge: Float
+  gt: Float
+  le: Float
+  lt: Float
+  ne: Float
+  notContains: Float
+}
+
+input TableIDFilterInput {
+  beginsWith: ID
+  between: [ID]
+  contains: ID
+  eq: ID
+  ge: ID
+  gt: ID
+  le: ID
+  lt: ID
+  ne: ID
+  notContains: ID
+}
+
+input TableISSLocationFilterInput {
+  deviceid: TableStringFilterInput
+  latitude: TableStringFilterInput
+  longitude: TableStringFilterInput
+  time: TableIntFilterInput
+}
+
+input TableIntFilterInput {
+  between: [Int]
+  contains: Int
+  eq: Int
+  ge: Int
+  gt: Int
+  le: Int
+  lt: Int
+  ne: Int
+  notContains: Int
+}
+
+input TableStringFilterInput {
+  beginsWith: String
+  between: [String]
+  contains: String
+  eq: String
+  ge: String
+  gt: String
+  le: String
+  lt: String
+  ne: String
+  notContains: String
+}
+
+input UpdateISSLocationInput {
+  deviceid: String!
+  latitude: String
+  longitude: String
+  time: Int!
 }

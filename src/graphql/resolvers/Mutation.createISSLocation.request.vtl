@@ -1,0 +1,16 @@
+{
+  "version": "2017-02-28",
+  "operation": "PutItem",
+  "key": {
+    "deviceid": $util.dynamodb.toDynamoDBJson($ctx.args.input.deviceid),
+    "time": $util.dynamodb.toDynamoDBJson($ctx.args.input.time),
+  },
+  "attributeValues": $util.dynamodb.toMapValuesJson($ctx.args.input),
+  "condition": {
+    "expression": "attribute_not_exists(#deviceid) AND attribute_not_exists(#time)",
+    "expressionNames": {
+      "#deviceid": "deviceid",
+      "#time": "time",
+    },
+  },
+}
